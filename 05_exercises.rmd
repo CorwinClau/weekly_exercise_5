@@ -145,19 +145,50 @@ knitr::include_graphics("national_trains_story.gif")
   3. In this exercise, you will create a stacked area plot that reveals itself over time (see the `geom_area()` examples [here](https://ggplot2.tidyverse.org/reference/position_stack.html)). You will look at cumulative harvest of tomato varieties over time. You should do the following:
   * From the `garden_harvest` data, filter the data to the tomatoes and find the *daily* harvest in pounds for each variety.  
   * Then, for each variety, find the cumulative harvest in pounds.  
-  * Use the data you just made to create a static cumulative harvest area plot, with the areas filled with different colors for each vegetable and arranged (HINT: `fct_reorder()`) from most to least harvested (most on the bottom).  
+  * Use the data you just made to create a static cumulative harvest area plot, with the areas filled with different colors for each variety and arranged (HINT: `fct_reorder()`) from most to least harvested (most on the bottom).  
   * Add animation to reveal the plot over date. 
 
 I have started the code for you below. The `complete()` function creates a row for all unique `date`/`variety` combinations. If a variety is not harvested on one of the harvest dates in the dataset, it is filled with a value of 0.
 
-```{r}
-garden_harvest %>% 
+```{r, eval=FALSE}
+static_plot <- garden_harvest %>% 
   filter(vegetable == "tomatoes") %>% 
-  group_by(date, variety) %>% 
+  group_by(variety, date) %>% 
   summarize(daily_harvest_lb = sum(weight)*0.00220462) %>% 
-  ungroup() %>% 
-  complete(variety, date, fill = list(daily_harvest_lb = 0))
+  complete(variety, date, fill = list(daily_harvest_lb = 0)) %>%
+  mutate(cum_harvest_lb = cumsum(daily_harvest_lb)) %>%
+  ungroup() %>%
+  ggplot(aes(x = date, y = cum_harvest_lb)) +
+  geom_area(aes(fill = fct_reorder(variety, cum_harvest_lb, max)))
+
+garden_harvest %>%
+  filter(vegetable == "tomatoes") %>%
+  group_by(variety, date) %>%
+  summarize(daily_harvest_lb = sum(weight)*0.00220462) %>%
+  complete(variety, date, fill = list(daily_harvest_lb = 0)) %>%
+  mutate(cum_harvest_lb = cumsum(daily_harvest_lb)) %>%
+  ungroup() %>%
+  ggplot(aes(x = date, y = cum_harvest_lb)) +
+  geom_area(aes(fill = fct_reorder(variety, cum_harvest_lb, max))) +
+  labs(x = "",
+       y = "",
+       fill = "",
+       title = "Cumulative harvest (lb) for tomato varieties",
+       subtitle = "Date: {frame_along}") +
+  transition_reveal(date)
+
+# Ask if the graph should be like this
 ```
+  
+```{r, eval=FALSE, echo=FALSE}
+anim_save("tomato_harvest.gif")
+```  
+
+```{r, echo=FALSE}
+knitr::include_graphics("tomato_harvest.gif")
+```
+
+  
 
 
 ## Maps, animation, and movement!
