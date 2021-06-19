@@ -81,12 +81,63 @@ Once your repository is created, you should always open your **project** rather 
 
 ## Warm-up exercises from tutorial
 
-  1. Choose 2 graphs you have created for ANY assignment in this class and add interactivity using the `ggplotly()` function.
+  1. Choose 2 graphs you have created for ANY assignment in this class and add interactivity using the `ggplotly()` function.  
+```{r}
+summary <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-06-01/summary.csv')
+
+tidy_tuesday_2 <- summary %>%
+  ggplot(aes(y = fct_rev(fct_infreq(country)))) +
+  geom_bar(aes(text = country)) +
+  labs(x = "Number of times chosen",
+       y = "",
+       title = "Which Ones Are Popular Season Countries?") 
+
+ggplotly(tidy_tuesday_2,
+         tooltip = c("text", "x"))
+
+Graph1 <- garden_harvest %>%
+  filter(vegetable == "tomatoes") %>%
+  mutate(week_day = wday(date, label = TRUE), month = month(date, label = TRUE)) %>%
+  group_by(month, week_day) %>%
+  summarize(sum_weight = sum(weight)) %>%
+  ggplot(aes(x = month, y = sum_weight, fill = week_day)) +
+  geom_col(position = "fill") +
+  labs(x = "",
+       y = "",
+       fill = "",
+       title = "Proportion of each weekday's tomato harvests") +
+  theme(panel.grid = element_blank())
+
+ggplotly(Graph1)
+```
+
+  
   
   2. Use animation to tell an interesting story with the `small_trains` dataset that contains data from the SNCF (National Society of French Railways). These are Tidy Tuesday data! Read more about it [here](https://github.com/rfordatascience/tidytuesday/tree/master/data/2019/2019-02-26).
 
-```{r}
+```{r, eval=FALSE}
+small_trains %>%
+  filter(avg_delay_all_arriving > -10, avg_delay_all_departing < 30, service == "National") %>%
+  ggplot(aes(x = avg_delay_all_departing, y = avg_delay_all_arriving, group = year)) +
+  geom_point(size = .5, alpha = .05, color = "darkslategray4") +
+  geom_smooth(color = "darkslategray3", se = FALSE, size = 1.5) +
+  labs(x = "Average delay for departing trains",
+       y = "",
+       title = "Average delay for all departing and arriving national trains",
+       subtitle = "In minutes. Year: {closest_state}") +
+  theme_minimal() +
+  theme(panel.grid.minor = element_blank()) +
+  transition_states(year,
+                    transition_length = 1,
+                    state_length = 2.5)
+```  
 
+```{r, eval=FALSE, echo=FALSE}
+anim_save("national_trains_story.gif")
+```  
+
+```{r, echo=FALSE}
+knitr::include_graphics("national_trains_story.gif")
 ```
 
 ## Garden data
