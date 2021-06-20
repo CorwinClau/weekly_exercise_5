@@ -20,9 +20,9 @@ library(tidyverse)     # for data cleaning and plotting
 library(gardenR)       # for Lisa's garden data
 library(lubridate)     # for date manipulation
 library(openintro)     # for the abbr2state() function
-library(palmerpenguins)# for Palmer penguin data
 library(maps)          # for map data
 library(ggmap)         # for mapping points on maps
+library(ggimage)
 library(gplots)        # for col2hex() function
 library(RColorBrewer)  # for color palettes
 library(sf)            # for working with spatial data
@@ -188,8 +188,6 @@ anim_save("tomato_harvest.gif")
 knitr::include_graphics("tomato_harvest.gif")
 ```
 
-  
-
 
 ## Maps, animation, and movement!
 
@@ -201,7 +199,44 @@ knitr::include_graphics("tomato_harvest.gif")
   * Color the path according to elevation.  
   * Show the time in the subtitle.  
   * CHALLENGE: use the `ggimage` package and `geom_image` to add a bike image instead of a red point. You can use [this](https://raw.githubusercontent.com/llendway/animation_and_interactivity/master/bike.png) image. See [here](https://goodekat.github.io/presentations/2019-isugg-gganimate-spooky/slides.html#35) for an example. 
-  * Add something of your own! And comment on if you prefer this to the static map and why or why not.
+  * Add something of your own! And comment on if you prefer this to the static map and why or why not.  
+```{r, eval=FALSE}
+bike_image_link <- "https://raw.githubusercontent.com/llendway/animation_and_interactivity/master/bike.png"
+
+mallorca_map <- get_stamenmap(
+    bbox = c(left = 2.28, bottom = 39.41, right = 3.025, top = 39.8), 
+    maptype = "terrain",
+    zoom = 11
+)
+
+mallorca_bike_day7_new <- mallorca_bike_day7 %>% mutate(image = bike_image_link)
+
+ggmap(mallorca_map) +
+  geom_path(data = mallorca_bike_day7_new, 
+            aes(x = lon, y = lat, color = ele),
+            size = 1.5) +
+  scale_color_viridis_c(option ="magma") +
+  geom_image(data = mallorca_bike_day7_new,
+             aes(x = lon, y = lat, image = image),
+             size = 0.08,
+             by = "width") +
+  scale_size_identity() +
+  labs(title = "Mallorca bike riding path",
+       subtitle = "Time: {frame_along}") +
+  theme_map() +
+  theme(legend.background = element_blank()) +
+  transition_reveal(time)
+```  
+
+```{r, eval=FALSE, echo=FALSE}
+anim_save("mallorca_bike_path.gif")
+```  
+
+```{r, echo=FALSE}
+knitr::include_graphics("mallorca_bike_path.gif")
+```
+  
+  I prefer this animation over the static map. This animation can clearly show the path along and the corresponding time, and is more engaging.  
   
   5. In this exercise, you get to meet my sister, Heather! She is a proud Mac grad, currently works as a Data Scientist at 3M where she uses R everyday, and for a few years (while still holding a full-time job) she was a pro triathlete. You are going to map one of her races. The data from each discipline of the Ironman 70.3 Pan Am championships, Panama is in a separate file - `panama_swim`, `panama_bike`, and `panama_run`. Create a similar map to the one you created with my cycling data. You will need to make some small changes: 1. combine the files (HINT: `bind_rows()`, 2. make the leading dot a different color depending on the event (for an extra challenge, make it a different image using `geom_image()!), 3. CHALLENGE (optional): color by speed, which you will need to compute on your own from the data. You can read Heather's race report [here](https://heatherlendway.com/2016/02/10/ironman-70-3-pan-american-championships-panama-race-report/). She is also in the Macalester Athletics [Hall of Fame](https://athletics.macalester.edu/honors/hall-of-fame/heather-lendway/184) and still has records at the pool. 
   
