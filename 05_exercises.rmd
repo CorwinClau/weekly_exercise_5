@@ -263,7 +263,7 @@ ggmap(panama_city_map) +
         legend.title = element_blank())
 
 # Ask about the second instruction: how to make one single point a different color
-# Ask if this question needs an animation, for it's not clearly told
+# Ask if this needs an animation, for it's not clearly told
 ```
   
 ## COVID-19 data
@@ -274,7 +274,41 @@ ggmap(panama_city_map) +
   * Create a static plot with cumulative cases on the x-axis and new cases in the past 7 days on the y-axis. Connect the points for each state over time. HINTS: use `geom_path()` and add a `group` aesthetic.  Put the x and y axis on the log scale and make the tick labels look nice - `scales::comma` is one option. This plot will look pretty ugly as is.
   * Animate the plot to reveal the pattern by date. Display the date as the subtitle. Add a leading point to each state's line (`geom_point()`) and add the state name as a label (`geom_text()` - you should look at the `check_overlap` argument).  
   * Use the `animate()` function to have 200 frames in your animation and make it 30 seconds long. 
-  * Comment on what you observe.
+  * Comment on what you observe.  
+```{r}
+# the tick labels look already nice if put both axes on the log scale?
+
+covid_anim <- covid19 %>%
+  group_by(state) %>%
+  mutate(seven_days_lag = replace_na(lag(cases, n = 7), 0),
+         new_cases_week = cases - seven_days_lag) %>%
+  filter(cases >= 20) %>%
+  ungroup() %>%
+  ggplot(aes(x = log(cases), y = log(new_cases_week), color = state)) +
+  geom_path() +
+  geom_point(size = 2.5) +
+  geom_text(aes(label = state),
+            check_overlap = TRUE) +
+  labs(x = "Log cumulative cases",
+       y = "",
+       title = "Log Cumulative Cases and Log of New Cases in the Past Week",
+       subtitle = "Date: frame_along") +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  transition_reveal(date)
+
+animate(covid_anim, duration = 30, nframes = 200)
+```  
+
+```{r, eval=FALSE, echo=FALSE}
+anim_save("covid_anim.gif")
+```  
+
+```{r, echo=FALSE}
+knitr::include_graphics("covid_anim.gif")
+```
+
+
   
   7. In this exercise you will animate a map of the US, showing how cumulative COVID-19 cases per 10,000 residents has changed over time. This is similar to exercises 11 & 12 from the previous exercises, with the added animation! So, in the end, you should have something like the static map you made there, but animated over all the days. The code below gives the population estimates for each state and loads the `states_map` data. Here is a list of details you should include in the plot:
   
@@ -292,7 +326,39 @@ census_pop_est_2018 <- read_csv("https://www.dropbox.com/s/6txwv3b4ng7pepe/us_ce
   mutate(state = str_to_lower(state))
 
 states_map <- map_data("state")
+
+covid_all_fridays <- covid19 %>%
+  mutate(week_day = wday(date, label = TRUE)) %>%
+  filter(week_day == "Fri") %>%
+  mutate(state = str_to_lower(state)) %>%
+  left_join(census_pop_est_2018, by = "state")
+
+covid_density_anim <- covid_all_fridays %>%
+  mutate(cases_per_10000 = (cases/est_pop_2018) * 10000) %>%
+  ggplot(aes(group = date)) +
+  geom_map(map = states_map,
+           aes(map_id = state, fill = cases_per_10000)) +
+  scale_fill_viridis_c(option = "viridis") +
+  expand_limits(x = states_map$long, y = states_map$lat) +
+  labs(title = "COVID-19 cumulative case counts in US",
+       subtitle = "Per 10,000 residents. Date: {frame_time}",
+       fill = "") +
+  theme_map() +
+  transition_time(date)
+
+animate(covid_density_anim, nframes = 200, end_pause = 10)
+
+#Comment?
+```  
+
+```{r, eval=FALSE, echo=FALSE}
+anim_save("covid_density_anim.gif")
+```  
+
+```{r, echo=FALSE}
+knitr::include_graphics("covid_density_anim.gif")
 ```
+
 
 ## Your first `shiny` app (for next week!)
 
