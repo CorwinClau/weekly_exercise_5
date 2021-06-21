@@ -165,19 +165,19 @@ garden_harvest %>%
   filter(vegetable == "tomatoes") %>%
   group_by(variety, date) %>%
   summarize(daily_harvest_lb = sum(weight)*0.00220462) %>%
-  complete(variety, date, fill = list(daily_harvest_lb = 0)) %>%
-  mutate(cum_harvest_lb = cumsum(daily_harvest_lb)) %>%
   ungroup() %>%
+  complete(variety, date, fill = list(daily_harvest_lb = 0)) %>%
+  group_by(variety) %>%
+  mutate(cum_harvest_lb = cumsum(daily_harvest_lb)) %>%
   ggplot(aes(x = date, y = cum_harvest_lb)) +
-  geom_area(aes(fill = fct_reorder(variety, cum_harvest_lb, max))) +
+  geom_area(aes(fill = fct_reorder(variety, cum_harvest_lb, max)),
+            position = "stack") +
   labs(x = "",
        y = "",
        fill = "",
        title = "Cumulative harvest (lb) for tomato varieties",
        subtitle = "Date: {frame_along}") +
   transition_reveal(date)
-
-# Ask if the graph should be like this
 ```
   
 ```{r, eval=FALSE, echo=FALSE}
@@ -241,6 +241,7 @@ knitr::include_graphics("mallorca_bike_path.gif")
   5. In this exercise, you get to meet my sister, Heather! She is a proud Mac grad, currently works as a Data Scientist at 3M where she uses R everyday, and for a few years (while still holding a full-time job) she was a pro triathlete. You are going to map one of her races. The data from each discipline of the Ironman 70.3 Pan Am championships, Panama is in a separate file - `panama_swim`, `panama_bike`, and `panama_run`. Create a similar map to the one you created with my cycling data. You will need to make some small changes: 1. combine the files (HINT: `bind_rows()`, 2. make the leading dot a different color depending on the event (for an extra challenge, make it a different image using `geom_image()!), 3. CHALLENGE (optional): color by speed, which you will need to compute on your own from the data. You can read Heather's race report [here](https://heatherlendway.com/2016/02/10/ironman-70-3-pan-american-championships-panama-race-report/). She is also in the Macalester Athletics [Hall of Fame](https://athletics.macalester.edu/honors/hall-of-fame/heather-lendway/184) and still has records at the pool. 
   
 ```{r}
+# Animate this one.
 panama_city_map <- get_stamenmap(
     bbox = c(left = -79.58, bottom = 8.91, right = -79.48, top = 9.0), 
     maptype = "terrain",
@@ -260,10 +261,9 @@ ggmap(panama_city_map) +
   theme_map() +
   theme(legend.background = element_blank(),
         legend.position = "bottom",
-        legend.title = element_blank())
+        legend.title = element_blank()) +
+  transition_reveal()
 
-# Ask about the second instruction: how to make one single point a different color
-# Ask if this needs an animation, for it's not clearly told
 ```
   
 ## COVID-19 data
@@ -276,8 +276,6 @@ ggmap(panama_city_map) +
   * Use the `animate()` function to have 200 frames in your animation and make it 30 seconds long. 
   * Comment on what you observe.  
 ```{r}
-# the tick labels look already nice if put both axes on the log scale?
-
 covid_anim <- covid19 %>%
   group_by(state) %>%
   mutate(seven_days_lag = replace_na(lag(cases, n = 7), 0),
@@ -307,7 +305,6 @@ anim_save("covid_anim.gif")
 ```{r, echo=FALSE}
 knitr::include_graphics("covid_anim.gif")
 ```
-
 
   
   7. In this exercise you will animate a map of the US, showing how cumulative COVID-19 cases per 10,000 residents has changed over time. This is similar to exercises 11 & 12 from the previous exercises, with the added animation! So, in the end, you should have something like the static map you made there, but animated over all the days. The code below gives the population estimates for each state and loads the `states_map` data. Here is a list of details you should include in the plot:
