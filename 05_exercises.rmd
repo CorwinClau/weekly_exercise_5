@@ -241,7 +241,6 @@ knitr::include_graphics("mallorca_bike_path.gif")
   5. In this exercise, you get to meet my sister, Heather! She is a proud Mac grad, currently works as a Data Scientist at 3M where she uses R everyday, and for a few years (while still holding a full-time job) she was a pro triathlete. You are going to map one of her races. The data from each discipline of the Ironman 70.3 Pan Am championships, Panama is in a separate file - `panama_swim`, `panama_bike`, and `panama_run`. Create a similar map to the one you created with my cycling data. You will need to make some small changes: 1. combine the files (HINT: `bind_rows()`, 2. make the leading dot a different color depending on the event (for an extra challenge, make it a different image using `geom_image()!), 3. CHALLENGE (optional): color by speed, which you will need to compute on your own from the data. You can read Heather's race report [here](https://heatherlendway.com/2016/02/10/ironman-70-3-pan-american-championships-panama-race-report/). She is also in the Macalester Athletics [Hall of Fame](https://athletics.macalester.edu/honors/hall-of-fame/heather-lendway/184) and still has records at the pool. 
   
 ```{r}
-# Animate this one.
 panama_city_map <- get_stamenmap(
     bbox = c(left = -79.58, bottom = 8.91, right = -79.48, top = 9.0), 
     maptype = "terrain",
@@ -251,9 +250,12 @@ panama_city_map <- get_stamenmap(
 panama_races <- bind_rows(panama_bike, panama_run, panama_swim)
 
 ggmap(panama_city_map) +
-  geom_point(data = panama_races, 
+  geom_path(data = panama_races, 
+             aes(x = lon, y = lat, group = event),
+             size = 1) +
+  geom_point(data = panama_races,
              aes(x = lon, y = lat, color = event),
-             size = .5) +
+             size = 3) +
   scale_color_manual(values = c("Bike" = "darkred",
                        "Run" = "darkgreen",
                        "Swim" = "lightblue")) +
@@ -262,9 +264,17 @@ ggmap(panama_city_map) +
   theme(legend.background = element_blank(),
         legend.position = "bottom",
         legend.title = element_blank()) +
-  transition_reveal()
-
+  transition_reveal(time)
+```  
+  
+```{r, eval=FALSE, echo=FALSE}
+anim_save("panama_races.gif")
+```  
+  
+```{r, echo=FALSE}
+knitr::include_graphics("panama_races.gif")
 ```
+  
   
 ## COVID-19 data
 
@@ -282,15 +292,17 @@ covid_anim <- covid19 %>%
          new_cases_week = cases - seven_days_lag) %>%
   filter(cases >= 20) %>%
   ungroup() %>%
-  ggplot(aes(x = log(cases), y = log(new_cases_week), color = state)) +
-  geom_path() +
-  geom_point(size = 2.5) +
-  geom_text(aes(label = state),
+  ggplot(aes(x = log(cases), y = log(new_cases_week))) +
+  geom_path(aes(group = state),
+            color = "lightgrey",
+            alpha = .8) +
+  geom_point(aes(color = state), size = 2.5) +
+  geom_text(aes(label = state, color = state),                                                   
             check_overlap = TRUE) +
   labs(x = "Log cumulative cases",
        y = "",
        title = "Log Cumulative Cases and Log of New Cases in the Past Week",
-       subtitle = "Date: frame_along") +
+       subtitle = "Date: {frame_along}") +
   theme_minimal() +
   theme(legend.position = "none") +
   transition_reveal(date)
@@ -305,7 +317,9 @@ anim_save("covid_anim.gif")
 ```{r, echo=FALSE}
 knitr::include_graphics("covid_anim.gif")
 ```
-
+  
+  It can be seen that on a large time scale, the log of cumulative cases and log new cases per week are related linearly for most states, despite several states such as Virgin Islands and Northern Mariana Islands, which drastically bounced vertically almost throughout the entire time span, indicating that the condition are not stable at all in these states: The number of new cases fluctuated dramatically.  
+  This animation also shows some specific information. For example, New York, the leading state of all states at the beginning, gradually fell behind California, Florida, Texas, and Illinois. Besides that, when around February 2021, all points begin to fall vertically, implying a sharp decrease in the number of new cases in the previous week.
   
   7. In this exercise you will animate a map of the US, showing how cumulative COVID-19 cases per 10,000 residents has changed over time. This is similar to exercises 11 & 12 from the previous exercises, with the added animation! So, in the end, you should have something like the static map you made there, but animated over all the days. The code below gives the population estimates for each state and loads the `states_map` data. Here is a list of details you should include in the plot:
   
@@ -344,8 +358,6 @@ covid_density_anim <- covid_all_fridays %>%
   transition_time(date)
 
 animate(covid_density_anim, nframes = 200, end_pause = 10)
-
-#Comment?
 ```  
 
 ```{r, eval=FALSE, echo=FALSE}
